@@ -9,6 +9,23 @@
   margin-bottom: 2rem;
 }
 
+.search-controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.dataset-selector {
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  background-color: white;
+  cursor: pointer;
+}
+
 .search-input {
   padding: 10px;
   font-size: 16px;
@@ -68,4 +85,21 @@
 
 .copy-button:hover {
   background-color: #0056b3;
+}
+
+.load-more-button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  margin: 20px auto;
+  display: block;
+  font-weight: bold;
+}
+
+.load-more-button:hover {
+  background-color: #218838;
 }
