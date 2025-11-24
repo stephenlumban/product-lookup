@@ -103,3 +103,38 @@
 .load-more-button:hover {
   background-color: #218838;
 }
+
+.button-group {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.bg-remove-button {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.bg-remove-button:hover {
+  background-color: #c82333;
+}
+
+.bg-remove-button:disabled {
+  background-color: #e2e6ea;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+.copy-button.bg-removed {
+  background-color: #17a2b8;
+}
+
+.copy-button.bg-removed:hover {
+  background-color: #138496;
+}
