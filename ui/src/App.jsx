@@ -2,17 +2,19 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Fuse from 'fuse.js';
 import productsV1 from './savealot_combined.json';
 import productsV2 from './savealot_base.json';
+import productsMerged from './savealot_merged_all.json';
 import ProductCard from './ProductCard';
 import './App.css';
 
 const datasets = {
+  'merged': { name: 'All Products (Merged)', data: productsMerged },
   'v1': { name: 'Shop.SaveALot', data: productsV1 },
   'v2': { name: 'SaveALot 16k', data: productsV2 }
 };
 
 function App() {
   const [query, setQuery] = useState('');
-  const [selectedDataset, setSelectedDataset] = useState('v2');
+  const [selectedDataset, setSelectedDataset] = useState('merged');
   const [visibleCount, setVisibleCount] = useState(20);
 
   const products = datasets[selectedDataset].data;
