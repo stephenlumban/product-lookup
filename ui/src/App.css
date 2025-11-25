@@ -35,7 +35,29 @@
   border: 1px solid #ccc;
 }
 
+.add-product-button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.add-product-button:hover {
+  background-color: #45a049;
+}
+
 .product-count {
+  margin-top: 10px;
+  color: #666;
+  font-weight: 500;
+}
+
+.loading-text {
   margin-top: 10px;
   color: #666;
   font-weight: 500;

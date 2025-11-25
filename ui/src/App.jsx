@@ -1,64 +1,173 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import Fuse from 'fuse.js';
-import productsV1 from './savealot_combined.json';
-import productsV2 from './savealot_base.json';
-import productsMerged from './savealot_merged_all.json';
-import ProductCard from './ProductCard';
-import './App.css';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { supabase } from "./supabaseClient";
+import ProductCard from "./ProductCard";
+import AddProductModal from "./AddProductModal";
+import SkeletonCard from "./SkeletonCard";
+import "./App.css";
 
-const datasets = {
-  'merged': { name: 'All Products (Merged)', data: productsMerged },
-  'v1': { name: 'Shop.SaveALot', data: productsV1 },
-  'v2': { name: 'SaveALot 16k', data: productsV2 }
-};
+const PAGE_SIZE = 20;
 
 function App() {
-  const [query, setQuery] = useState('');
-  const [selectedDataset, setSelectedDataset] = useState('merged');
-  const [visibleCount, setVisibleCount] = useState(20);
+  const [query, setQuery] = useState("");
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
+  
+  // For search functionality
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
 
-  const products = datasets[selectedDataset].data;
-
-  const fuse = useMemo(() => {
-    return new Fuse(products, {
-      keys: ['productName'],
-      threshold: 0.3,
-      ignoreLocation: true,
-    });
-  }, [products]);
-
-  const results = useMemo(() => {
-    if (!query) return products;
-    return fuse.search(query).map(result => result.item);
-  }, [query, fuse, products]);
-
-  const visibleResults = useMemo(() => {
-    return results.slice(0, visibleCount);
-  }, [results, visibleCount]);
-
+  // Initial load - fetch only first 20 products
   useEffect(() => {
-    setVisibleCount(20);
-  }, [query, selectedDataset]);
+    const fetchInitialProducts = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(0, PAGE_SIZE - 1);
+        
+        if (error) {
+          console.error('Error fetching products:', error);
+        } else {
+          const mappedData = data.map(item => ({
+            ...item,
+            productName: item.product_name,
+            productImageUrl: item.product_image_url
+          }));
+          setProducts(mappedData);
+          setHasMore(data.length === PAGE_SIZE);
+          setPage(1);
+        }
+      } catch (err) {
+        console.error('Unexpected error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleLoadMore = () => {
-    setVisibleCount(prev => prev + 20);
+    fetchInitialProducts();
+  }, []);
+
+  // Function to load more products
+  const loadMoreProducts = useCallback(async () => {
+    if (loadingMore || !hasMore || query) return;
+
+    try {
+      setLoadingMore(true);
+      const start = page * PAGE_SIZE;
+      const end = start + PAGE_SIZE - 1;
+
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .range(start, end);
+      
+      if (error) {
+        console.error('Error fetching more products:', error);
+      } else {
+        const mappedData = data.map(item => ({
+          ...item,
+          productName: item.product_name,
+          productImageUrl: item.product_image_url
+        }));
+        setProducts(prev => [...prev, ...mappedData]);
+        setHasMore(data.length === PAGE_SIZE);
+        setPage(prev => prev + 1);
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [page, loadingMore, hasMore, query]);
+
+  // Search products in database with debouncing
+  useEffect(() => {
+    if (!query) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      return;
+    }
+
+    setSearchLoading(true);
+    
+    // Debounce search - wait 300ms after user stops typing
+    const debounceTimer = setTimeout(async () => {
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .ilike('product_name', `%${query}%`)
+          .order('created_at', { ascending: false })
+          .limit(100); // Limit search results to 100
+        
+        if (error) {
+          console.error('Error searching products:', error);
+          setSearchResults([]);
+        } else {
+          const mappedData = data.map(item => ({
+            ...item,
+            productName: item.product_name,
+            productImageUrl: item.product_image_url
+          }));
+          setSearchResults(mappedData);
+        }
+      } catch (err) {
+        console.error('Unexpected error:', err);
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(debounceTimer);
+  }, [query]);
+
+  const handleProductAdded = (newProduct) => {
+    const mappedProduct = {
+      ...newProduct,
+      productName: newProduct.product_name,
+      productImageUrl: newProduct.product_image_url
+    };
+    setProducts(prev => [mappedProduct, ...prev]);
+    
+    // Scroll to top to show the newly added product
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // Use search results when searching, otherwise use paginated products
+  const results = query ? searchResults : products;
+
+  const observer = useRef();
+  const lastProductElementRef = useCallback(node => {
+    if (loading || loadingMore) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && !query) {
+        loadMoreProducts();
+      }
+    }, { rootMargin: '100px' });
+    if (node) observer.current.observe(node);
+  }, [loading, loadingMore, query, loadMoreProducts]);
 
   return (
     <div className="app-container">
       <header className="app-header">
         <h1>Product Lookup</h1>
-        
+
         <div className="search-controls">
-          <select 
-            value={selectedDataset} 
-            onChange={(e) => setSelectedDataset(e.target.value)}
-            className="dataset-selector"
+          <button 
+            onClick={() => setIsModalOpen(true)} 
+            className="add-product-button"
           >
-            {Object.entries(datasets).map(([key, { name }]) => (
-              <option key={key} value={key}>{name}</option>
-            ))}
-          </select>
+            + Add Product
+          </button>
 
           <input
             type="text"
@@ -69,18 +178,50 @@ function App() {
           />
         </div>
 
-        <p className="product-count">Found {results.length} products</p>
+        {loading ? (
+          <p className="loading-text">Loading products...</p>
+        ) : (
+          <p className="product-count">
+            {query 
+              ? `Found ${results.length} products` 
+              : `Showing ${products.length} products${hasMore ? ' (scroll for more)' : ''}`
+            }
+          </p>
+        )}
       </header>
-      <div className="product-grid">
-        {visibleResults.map((product, index) => (
-          <ProductCard key={index} product={product} />
-        ))}
-      </div>
-      {visibleCount < results.length && (
-        <button onClick={handleLoadMore} className="load-more-button">
-          Load More
-        </button>
+      
+      {searchLoading ? (
+        <div className="product-grid">
+          {[...Array(20)].map((_, i) => (
+            <SkeletonCard key={`search-skeleton-${i}`} />
+          ))}
+        </div>
+      ) : (
+        <>
+          <div className="product-grid">
+            {results.map((product, index) => {
+              if (results.length === index + 1 && !query) {
+                return <div ref={lastProductElementRef} key={product.id || index}><ProductCard product={product} /></div>
+              } else {
+                return <ProductCard key={product.id || index} product={product} />
+              }
+            })}
+          </div>
+          {loadingMore && (
+            <div className="product-grid">
+              {[...Array(4)].map((_, i) => (
+                <SkeletonCard key={`skeleton-${i}`} />
+              ))}
+            </div>
+          )}
+        </>
       )}
+      
+      <AddProductModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onProductAdded={handleProductAdded}
+      />
     </div>
   );
 }
