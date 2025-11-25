@@ -1,4 +1,10 @@
-import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useRef,
+  useCallback,
+} from "react";
 import { supabase } from "./supabaseClient";
 import ProductCard from "./ProductCard";
 import AddProductModal from "./AddProductModal";
@@ -15,10 +21,14 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
-  
+
   // For search functionality
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [visibleSearchCount, setVisibleSearchCount] = useState(20);
+  
+  // Scroll to top button
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   // Initial load - fetch only first 20 products
   useEffect(() => {
@@ -26,31 +36,41 @@ function App() {
       try {
         setLoading(true);
         const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .order('created_at', { ascending: false })
+          .from("products")
+          .select("*")
+          .order("created_at", { ascending: false })
           .range(0, PAGE_SIZE - 1);
-        
+
         if (error) {
-          console.error('Error fetching products:', error);
+          console.error("Error fetching products:", error);
         } else {
-          const mappedData = data.map(item => ({
+          const mappedData = data.map((item) => ({
             ...item,
             productName: item.product_name,
-            productImageUrl: item.product_image_url
+            productImageUrl: item.product_image_url,
           }));
           setProducts(mappedData);
           setHasMore(data.length === PAGE_SIZE);
           setPage(1);
         }
       } catch (err) {
-        console.error('Unexpected error:', err);
+        console.error("Unexpected error:", err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchInitialProducts();
+  }, []);
+
+  // Track scroll position for scroll-to-top button
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   // Function to load more products
@@ -63,25 +83,25 @@ function App() {
       const end = start + PAGE_SIZE - 1;
 
       const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false })
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false })
         .range(start, end);
-      
+
       if (error) {
-        console.error('Error fetching more products:', error);
+        console.error("Error fetching more products:", error);
       } else {
-        const mappedData = data.map(item => ({
+        const mappedData = data.map((item) => ({
           ...item,
           productName: item.product_name,
-          productImageUrl: item.product_image_url
+          productImageUrl: item.product_image_url,
         }));
-        setProducts(prev => [...prev, ...mappedData]);
+        setProducts((prev) => [...prev, ...mappedData]);
         setHasMore(data.length === PAGE_SIZE);
-        setPage(prev => prev + 1);
+        setPage((prev) => prev + 1);
       }
     } catch (err) {
-      console.error('Unexpected error:', err);
+      console.error("Unexpected error:", err);
     } finally {
       setLoadingMore(false);
     }
@@ -92,34 +112,35 @@ function App() {
     if (!query) {
       setSearchResults([]);
       setSearchLoading(false);
+      setVisibleSearchCount(20);
       return;
     }
 
     setSearchLoading(true);
-    
+
     // Debounce search - wait 300ms after user stops typing
     const debounceTimer = setTimeout(async () => {
       try {
         const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .ilike('product_name', `%${query}%`)
-          .order('created_at', { ascending: false })
+          .from("products")
+          .select("*")
+          .ilike("product_name", `%${query}%`)
+          .order("created_at", { ascending: false })
           .limit(100); // Limit search results to 100
-        
+
         if (error) {
-          console.error('Error searching products:', error);
+          console.error("Error searching products:", error);
           setSearchResults([]);
         } else {
-          const mappedData = data.map(item => ({
+          const mappedData = data.map((item) => ({
             ...item,
             productName: item.product_name,
-            productImageUrl: item.product_image_url
+            productImageUrl: item.product_image_url,
           }));
           setSearchResults(mappedData);
         }
       } catch (err) {
-        console.error('Unexpected error:', err);
+        console.error("Unexpected error:", err);
         setSearchResults([]);
       } finally {
         setSearchLoading(false);
@@ -133,28 +154,45 @@ function App() {
     const mappedProduct = {
       ...newProduct,
       productName: newProduct.product_name,
-      productImageUrl: newProduct.product_image_url
+      productImageUrl: newProduct.product_image_url,
     };
-    setProducts(prev => [mappedProduct, ...prev]);
-    
+    setProducts((prev) => [mappedProduct, ...prev]);
+
     // Scroll to top to show the newly added product
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   // Use search results when searching, otherwise use paginated products
-  const results = query ? searchResults : products;
+  const results = query ? searchResults.slice(0, visibleSearchCount) : products;
+  const hasMoreSearchResults = query && visibleSearchCount < searchResults.length;
 
   const observer = useRef();
-  const lastProductElementRef = useCallback(node => {
-    if (loading || loadingMore) return;
-    if (observer.current) observer.current.disconnect();
-    observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && !query) {
-        loadMoreProducts();
-      }
-    }, { rootMargin: '100px' });
-    if (node) observer.current.observe(node);
-  }, [loading, loadingMore, query, loadMoreProducts]);
+  const lastProductElementRef = useCallback(
+    (node) => {
+      if (loading || loadingMore) return;
+      if (observer.current) observer.current.disconnect();
+      observer.current = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting) {
+            if (query && hasMoreSearchResults) {
+              // Load more search results
+              setVisibleSearchCount((prev) => prev + 20);
+            } else if (!query) {
+              // Load more products from database
+              loadMoreProducts();
+            }
+          }
+        },
+        { rootMargin: "100px" }
+      );
+      if (node) observer.current.observe(node);
+    },
+    [loading, loadingMore, query, loadMoreProducts, hasMoreSearchResults]
+  );
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <div className="app-container">
@@ -162,8 +200,8 @@ function App() {
         <h1>Product Lookup</h1>
 
         <div className="search-controls">
-          <button 
-            onClick={() => setIsModalOpen(true)} 
+          <button
+            onClick={() => setIsModalOpen(true)}
             className="add-product-button"
           >
             + Add Product
@@ -182,14 +220,15 @@ function App() {
           <p className="loading-text">Loading products...</p>
         ) : (
           <p className="product-count">
-            {query 
-              ? `Found ${results.length} products` 
-              : `Showing ${products.length} products${hasMore ? ' (scroll for more)' : ''}`
-            }
+            {query
+              ? `Found ${results.length} products`
+              : `Showing ${products.length} products${
+                  hasMore ? " (scroll for more)" : ""
+                }`}
           </p>
         )}
       </header>
-      
+
       {searchLoading ? (
         <div className="product-grid">
           {[...Array(20)].map((_, i) => (
@@ -200,14 +239,20 @@ function App() {
         <>
           <div className="product-grid">
             {results.map((product, index) => {
-              if (results.length === index + 1 && !query) {
-                return <div ref={lastProductElementRef} key={product.id || index}><ProductCard product={product} /></div>
+              if (results.length === index + 1) {
+                return (
+                  <div ref={lastProductElementRef} key={product.id || index}>
+                    <ProductCard product={product} />
+                  </div>
+                );
               } else {
-                return <ProductCard key={product.id || index} product={product} />
+                return (
+                  <ProductCard key={product.id || index} product={product} />
+                );
               }
             })}
           </div>
-          {loadingMore && (
+          {(loadingMore || hasMoreSearchResults) && (
             <div className="product-grid">
               {[...Array(4)].map((_, i) => (
                 <SkeletonCard key={`skeleton-${i}`} />
@@ -216,8 +261,14 @@ function App() {
           )}
         </>
       )}
-      
-      <AddProductModal 
+
+      {showScrollTop && (
+        <button onClick={scrollToTop} className="scroll-to-top" title="Scroll to top">
+          ↑
+        </button>
+      )}
+
+      <AddProductModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onProductAdded={handleProductAdded}
