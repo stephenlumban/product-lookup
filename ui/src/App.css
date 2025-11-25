@@ -35,7 +35,29 @@
   border: 1px solid #ccc;
 }
 
+.add-product-button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.add-product-button:hover {
+  background-color: #45a049;
+}
+
 .product-count {
+  margin-top: 10px;
+  color: #666;
+  font-weight: 500;
+}
+
+.loading-text {
   margin-top: 10px;
   color: #666;
   font-weight: 500;
@@ -138,3 +160,34 @@
 .copy-button.bg-removed:hover {
   background-color: #138496;
 }
+
+.scroll-to-top {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 50px;
+  height: 50px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scroll-to-top:hover {
+  background-color: #0056b3;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.scroll-to-top:active {
+  transform: translateY(-1px);
+}
+
