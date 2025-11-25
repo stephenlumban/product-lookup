@@ -24,7 +24,7 @@
 
 .modal-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   padding: 20px;
   border-bottom: 1px solid #e0e0e0;
@@ -33,25 +33,6 @@
 .modal-header h2 {
   margin: 0;
   font-size: 24px;
-  color: #333;
-}
-
-.close-button {
-  background: none;
-  border: none;
-  font-size: 32px;
-  color: #666;
-  cursor: pointer;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.2s;
-}
-
-.close-button:hover {
   color: #333;
 }
 
@@ -69,6 +50,7 @@
   font-weight: 600;
   color: #333;
   font-size: 14px;
+  text-align: left;
 }
 
 .form-group input,
@@ -79,6 +61,8 @@
   border-radius: 6px;
   font-size: 14px;
   transition: border-color 0.2s;
+  box-sizing: border-box;
+  height: 42px; /* Ensure exact same height */
 }
 
 .form-group input:focus,
