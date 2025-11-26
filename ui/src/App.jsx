@@ -12,7 +12,7 @@ import Navbar from "./components/navbar/Navbar";
 import SkeletonCard from "./SkeletonCard";
 import "./App.css";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 24;
 
 function App() {
   const [query, setQuery] = useState("");
@@ -27,7 +27,7 @@ function App() {
   // For search functionality
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
-  const [visibleSearchCount, setVisibleSearchCount] = useState(20);
+  const [visibleSearchCount, setVisibleSearchCount] = useState(24);
   
   // Scroll to top button
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -127,7 +127,7 @@ function App() {
     if (!query) {
       setSearchResults([]);
       setSearchLoading(false);
-      setVisibleSearchCount(20);
+      setVisibleSearchCount(24);
       return;
     }
 
@@ -192,7 +192,7 @@ function App() {
           if (entries[0].isIntersecting) {
             if (query && hasMoreSearchResults) {
               // Load more search results
-              setVisibleSearchCount((prev) => prev + 20);
+              setVisibleSearchCount((prev) => prev + 24);
             } else if (!query) {
               // Load more products from database
               loadMoreProducts();
@@ -232,7 +232,7 @@ function App() {
 
       {searchLoading ? (
         <div className="product-grid">
-          {[...Array(20)].map((_, i) => (
+          {[...Array(24)].map((_, i) => (
             <SkeletonCard key={`search-skeleton-${i}`} />
           ))}
         </div>
