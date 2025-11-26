@@ -79,19 +79,36 @@ function ProductCard({ product }) {
         className="product-image"
         loading="lazy"
       />
-      <h3 className="product-name">{product.productName}</h3>
+      <h3 className="product-name" title={product.productName}>{product.productName}</h3>
       <div className="button-group">
-        <button onClick={() => copyToClipboard(product.productImageUrl, 'original')} className="copy-button">
-          {copiedType === 'original' ? 'Copied!' : 'Copy Original'}
+        <button 
+          onClick={() => copyToClipboard(product.productImageUrl, 'original')} 
+          className="icon-button copy-button"
+          title={copiedType === 'original' ? 'Copied!' : 'Copy Original Image URL'}
+        >
+          <i className={`fa ${copiedType === 'original' ? 'fa-check' : 'fa-clipboard'}`} aria-hidden="true"></i>
         </button>
         
         {!removedBgLink ? (
-          <button onClick={handleRemoveBg} className="bg-remove-button" disabled={loadingBg}>
-            {loadingBg ? 'Processing...' : 'Remove BG'}
+          <button 
+            onClick={handleRemoveBg} 
+            className="icon-button bg-remove-button" 
+            disabled={loadingBg}
+            title="Remove Background"
+          >
+            {loadingBg ? (
+              <i className="fa fa-spinner fa-spin" aria-hidden="true"></i>
+            ) : (
+              <i className="fa fa-magic" aria-hidden="true"></i>
+            )}
           </button>
         ) : (
-          <button onClick={() => copyToClipboard(removedBgLink, 'bg-removed')} className="copy-button bg-removed">
-            {copiedType === 'bg-removed' ? 'Copied!' : 'Copy No-BG Link'}
+          <button 
+            onClick={() => copyToClipboard(removedBgLink, 'bg-removed')} 
+            className="icon-button copy-button bg-removed"
+            title={copiedType === 'bg-removed' ? 'Copied!' : 'Copy No-BG Image URL'}
+          >
+            <i className={`fa ${copiedType === 'bg-removed' ? 'fa-check' : 'fa-clipboard'}`} aria-hidden="true"></i>
           </button>
         )}
       </div>

@@ -121,7 +121,6 @@ function AddProductModal({ isOpen, onClose, onProductAdded }) {
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Add New Product</h2>
-          <button className="close-button" onClick={onClose}>&times;</button>
         </div>
         
         <form onSubmit={handleSubmit} className="product-form">
@@ -140,23 +139,6 @@ function AddProductModal({ isOpen, onClose, onProductAdded }) {
           </div>
 
           <div className="form-group">
-            <label>Product Image *</label>
-            <button
-              type="button"
-              onClick={handleFilestackPicker}
-              className="filestack-button"
-              disabled={loading}
-            >
-              {productImageUrl ? 'Change Image' : 'Upload Image'}
-            </button>
-            {productImageUrl && (
-              <div className="image-preview">
-                <img src={productImageUrl} alt="Preview" />
-              </div>
-            )}
-          </div>
-
-          <div className="form-group">
             <label htmlFor="category">Category *</label>
             <select
               id="category"
@@ -171,6 +153,23 @@ function AddProductModal({ isOpen, onClose, onProductAdded }) {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="form-group">
+            <label>Product Image *</label>
+            <button
+              type="button"
+              onClick={handleFilestackPicker}
+              className="filestack-button"
+              disabled={loading}
+            >
+              {productImageUrl ? 'Change Image' : 'Upload Image'}
+            </button>
+            {productImageUrl && (
+              <div className="image-preview">
+                <img src={productImageUrl} alt="Preview" />
+              </div>
+            )}
           </div>
 
           <div className="form-actions">

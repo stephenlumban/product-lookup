@@ -8,10 +8,11 @@ import React, {
 import { supabase } from "./supabaseClient";
 import ProductCard from "./ProductCard";
 import AddProductModal from "./AddProductModal";
+import Navbar from "./components/navbar/Navbar";
 import SkeletonCard from "./SkeletonCard";
 import "./App.css";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 24;
 
 function App() {
   const [query, setQuery] = useState("");
@@ -21,25 +22,33 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
+  const [totalCount, setTotalCount] = useState(null);
 
   // For search functionality
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
-  const [visibleSearchCount, setVisibleSearchCount] = useState(20);
+  const [visibleSearchCount, setVisibleSearchCount] = useState(24);
   
   // Scroll to top button
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // Initial load - fetch only first 20 products
+  // Initial load - fetch only first 20 products and total count
   useEffect(() => {
     const fetchInitialProducts = async () => {
       try {
         setLoading(true);
+        
+        // Fetch products
         const { data, error } = await supabase
           .from("products")
           .select("*")
           .order("created_at", { ascending: false })
           .range(0, PAGE_SIZE - 1);
+
+        // Fetch total count
+        const { count, error: countError } = await supabase
+          .from("products")
+          .select("*", { count: "exact", head: true });
 
         if (error) {
           console.error("Error fetching products:", error);
@@ -52,6 +61,12 @@ function App() {
           setProducts(mappedData);
           setHasMore(data.length === PAGE_SIZE);
           setPage(1);
+        }
+
+        if (countError) {
+          console.error("Error fetching total count:", countError);
+        } else {
+          setTotalCount(count);
         }
       } catch (err) {
         console.error("Unexpected error:", err);
@@ -112,7 +127,7 @@ function App() {
     if (!query) {
       setSearchResults([]);
       setSearchLoading(false);
-      setVisibleSearchCount(20);
+      setVisibleSearchCount(24);
       return;
     }
 
@@ -157,6 +172,7 @@ function App() {
       productImageUrl: newProduct.product_image_url,
     };
     setProducts((prev) => [mappedProduct, ...prev]);
+    setTotalCount((prev) => (prev ? prev + 1 : 1));
 
     // Scroll to top to show the newly added product
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -176,7 +192,7 @@ function App() {
           if (entries[0].isIntersecting) {
             if (query && hasMoreSearchResults) {
               // Load more search results
-              setVisibleSearchCount((prev) => prev + 20);
+              setVisibleSearchCount((prev) => prev + 24);
             } else if (!query) {
               // Load more products from database
               loadMoreProducts();
@@ -196,42 +212,27 @@ function App() {
 
   return (
     <div className="app-container">
-      <header className="app-header">
-        <h1>Product Lookup</h1>
+      <Navbar
+        query={query}
+        setQuery={setQuery}
+        onAddProductClick={() => setIsModalOpen(true)}
+      />
 
-        <div className="search-controls">
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="add-product-button"
-          >
-            + Add Product
-          </button>
-
-          <input
-            type="text"
-            placeholder="Search products..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="search-input"
-          />
-        </div>
-
+      <div className="content-wrapper">
         {loading ? (
           <p className="loading-text">Loading products...</p>
         ) : (
           <p className="product-count">
             {query
-              ? `Found ${results.length} products`
-              : `Showing ${products.length} products${
-                  hasMore ? " (scroll for more)" : ""
-                }`}
+              ? `Found ${results.length}${totalCount ? ` out of ${totalCount.toLocaleString()}` : ""} products`
+              : `Showing ${products.length}${totalCount ? ` out of ${totalCount.toLocaleString()}` : ""}${hasMore ? " (scroll for more)" : " products"}`}
           </p>
         )}
-      </header>
+      </div>
 
       {searchLoading ? (
         <div className="product-grid">
-          {[...Array(20)].map((_, i) => (
+          {[...Array(24)].map((_, i) => (
             <SkeletonCard key={`search-skeleton-${i}`} />
           ))}
         </div>
