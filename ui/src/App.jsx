@@ -137,11 +137,7 @@ function App() {
     const debounceTimer = setTimeout(async () => {
       try {
         const { data, error } = await supabase
-          .from("products")
-          .select("*")
-          .ilike("product_name", `%${query}%`)
-          .order("created_at", { ascending: false })
-          .limit(100); // Limit search results to 100
+          .rpc("search_product_fuzzy", { query_text: query });
 
         if (error) {
           console.error("Error searching products:", error);
